@@ -242,6 +242,68 @@
 .story-foot{font-size:12px;line-height:1.6;color:#8fb4d9;border-top:1px solid rgba(110,160,210,.2);padding-top:10px}
 @media (max-width:680px){.story-stage{grid-template-columns:96px minmax(0,1fr) 96px;gap:8px}.story-portrait img{width:96px;height:96px}.story-text{font-size:15px;line-height:1.7}.story-card{padding:12px}.story-dialog{min-height:170px;padding:14px}.story-dialog:before{display:none}.story-portrait figcaption{font-size:11px}}
 
+
+/* ===== 手机端适配补丁（2026-11）：紧凑 HUD + 画面最大化 + 弹层自适应 ===== */
+@media (max-width: 900px), (max-height: 560px) {
+  #hud{
+    position:relative; display:grid; order:-1;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    gap:3px 8px; padding:5px 8px; background:#091221;
+    pointer-events:auto; align-items:start;
+  }
+  #hud .compact-vitals{display:flex;flex-direction:column;gap:2px;padding:0;min-width:0}
+  #hud .vital-pair{height:15px;min-height:15px}
+  #hud .vital-row{font-size:10px;line-height:15px;gap:4px;margin:0;padding:0 2px}
+  #hud .vital-row span,#hud .vital-row b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0}
+  #hud .vital-row b{font-size:11px;flex:0 0 auto}
+  #hud .bar{height:3px;margin:0;width:100%}
+  #hud .compact-score{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:0;padding:0;font-size:10px;min-width:0}
+  #hud .compact-score>b{font-size:15px;line-height:1.05}
+  #hud .compact-score .ult-row{display:none}
+  #hud .compact-progress{grid-column:1 / 3;grid-row:2;padding:0;align-self:center}
+  #hud .compact-progress .vital-row{font-size:10px;line-height:13px}
+  #hud .controls{grid-column:3;grid-row:2;display:flex;gap:4px;justify-content:flex-end;align-self:center;flex-wrap:nowrap}
+  #hud .controls .hudbtn{height:24px;padding:0 8px;font-size:11px;min-width:0;flex:0 0 auto}
+
+  .ov{padding:8px}
+  .ov .card,.card{max-height:calc(100dvh - 16px)!important;width:100%;max-width:min(720px,calc(100vw - 16px));padding:14px}
+  .ov .card>*+*{margin-top:8px}
+  .card h1{font-size:20px}
+  .card .sub,.card ul,.card li,.shopcard .d,.shopcard .cost{font-size:12px;line-height:1.5}
+  .shopgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #basicGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mission-hint{font-size:11px;padding:3px 8px;z-index:6}
+}
+@media (max-width:900px) and (orientation:portrait){
+  body{display:flex;align-items:center;justify-content:center;min-height:100dvh;min-height:100vh}
+}
+
+/* 小屏故事对话框：单列堆叠，避免三列把正文挤成竖条 */
+@media (max-width:640px){
+  #ovStory .story-card{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:12px;gap:8px;overflow-y:auto}
+  #ovStory .story-stage{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-height:0}
+  #ovStory .story-dialog{order:1;min-height:0;padding:12px}
+  #ovStory .story-text{font-size:14px;line-height:1.65}
+  #ovStory .story-speaker{font-size:16px}
+  #ovStory .story-portrait{order:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}
+  #ovStory .story-portrait img{width:52px;height:52px}
+  #ovStory .story-dialog-foot{flex-wrap:wrap;gap:8px}
+  #ovStory .story-tip{font-size:11px}
+  #ovStory .story-portrait figcaption{font-size:11px}
+}
+
+/* 小屏基地分类标签：单行不换字，横向可滑动 */
+@media (max-width:640px){
+  #ovShop .shop-tabs{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  #ovShop .shop-tabs .btn{flex:0 0 auto;white-space:nowrap;font-size:12px;padding:6px 10px;min-width:0}
+}
+
+/* 竖屏轻提示（菜单页） */
+.portrait-tip{display:none}
+@media (max-width:900px) and (orientation:portrait){
+  .portrait-tip{display:block;margin:0 0 8px;padding:6px 10px;border:1px dashed rgba(120,170,220,.55);border-radius:8px;background:rgba(20,40,64,.55);color:#9fc0df;font-size:12px;line-height:1.4;text-align:center}
+}
 </style>
 </head>
 <body>
@@ -279,6 +341,7 @@
 <!-- 菜单 -->
   <div class="ov" id="ovMenu">
     <div class="card">
+      <div class="portrait-tip">📱 横屏游玩画面更大，竖屏也可以继续</div>
       <h1>苍穹<em>防线</em></h1>
       <div class="sub"><span id="rulesetLabel"></span></div>
       <label class="difficulty-choice" for="playModeSelect">游戏模式<select id="playModeSelect"><option value="normal">经典模式 · 零件与永久金币</option><option value="developer">开发者模式 · 经典玩法 · 可选关卡与累计奖励</option><option value="rogue">Rogue模式 · 卡牌构筑 · 死亡重置</option><option value="story">故事模式 · 灯塔协议 · 10章剧情教程</option></select></label>
@@ -20488,6 +20551,7 @@ const CFG = {
   resolutionKey: "skydefense_resolution_v1"
 };
 /* ===== 屏幕分辨率（整体等比缩放） ===== */
+const __touchUI=(()=>{try{return matchMedia('(pointer:coarse)').matches&&!matchMedia('(hover:hover)').matches;}catch(e){return false;}})();
 const RESOLUTION_SCALES = [1, 1.25, 1.5];
 let gameViewScale = 1;
 
@@ -22041,7 +22105,7 @@ function beginStoryGate(gate){
   if(gate==='ult'){G.ult=CFG.ult.maxEnergy;G.ultCd=0;}
   $('ovStory').classList.add('hide');
   const bar=$('storyGateBar');
-  if(bar){bar.classList.remove('hide');bar.textContent=gate==='move'?'教程 · 按 W/A/S/D 或方向键移动，完成移动后战斗继续':'教程 · 按 E 释放 EMP 风暴，清弹后战斗继续';}
+  if(bar){bar.classList.remove('hide');bar.textContent=gate==='move'?(__touchUI?'教程 · 拖动屏幕移动战机，完成移动后战斗继续':'教程 · 按 W/A/S/D 或方向键移动，完成移动后战斗继续'):(__touchUI?'教程 · 点 EMP 按钮释放风暴，清弹后战斗继续':'教程 · 按 E 释放 EMP 风暴，清弹后战斗继续');}
   updateHUD();
 }
 function finishStoryGate(){
@@ -22685,7 +22749,7 @@ function resetObstacles() {
 function repairCost() { return CFG.repairBase + CFG.repairPerLvl * G.level; }
 function needsRepair() { return G.hp < playerMaxHp() || G.armor < armorCap() - 0.001; }
 function missionText() {
-  if(isStory()){if(G.storyGate)return "教程：按 "+(G.storyGate==="move"?"W/A/S/D 或方向键移动":"E 释放 EMP")+"，完成后战斗继续";if(G.bossClear)return "故事关卡完成";if(G.storySurviveLeft>0)return "第 "+storyLevel()+" 章 · 守住信标 "+Math.ceil(Math.max(0,G.storySurviveLeft))+" 秒";return "第 "+storyLevel()+" 章 · "+storyDef().title+" · 击败敌人推进波次";}
+  if(isStory()){if(G.storyGate)return __touchUI?"教程：拖动屏幕移动或点 EMP，完成后战斗继续":"教程：按 "+(G.storyGate==="move"?"W/A/S/D 或方向键移动":"E 释放 EMP")+"，完成后战斗继续";if(G.bossClear)return "故事关卡完成";if(G.storySurviveLeft>0)return "第 "+storyLevel()+" 章 · 守住信标 "+Math.ceil(Math.max(0,G.storySurviveLeft))+" 秒";return "第 "+storyLevel()+" 章 · "+storyDef().title+" · 击败敌人推进波次";}
   if(G.bossClear)return "任务完成：基地整理装备后出击下一关";
   return "自动射击；拖动或WASD/方向键移动，亮色小圆环是受击区域。击败首领通关";
 }
