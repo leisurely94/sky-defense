@@ -23852,7 +23852,7 @@ function prepareDeveloperLevel(level){
   G.hp=playerMaxHp();G.armor=armorCap();
 }
 function startGame() {
-  if (!G.resourcesReady) return;
+  if (!G.resourcesReady) { const _b=$("btnStart"); if(_b)_b.textContent="素材加载中，请稍候再点"; return; }
   if($("playModeSelect").value==="story"){G.playMode="story";startStory(1,true);return;}
   G.playMode=$("playModeSelect").value==="rogue"?"rogue":$("playModeSelect").value==="developer"?"developer":"normal";G.shopFromPause=false;
   if(isRogue()){rogueKitWipe();G.wallet={...freshWallet(0),clearedThrough:permanentClearedThrough()};G.rogue=freshRogue();const _rc=$('rogueContractSelect')?.value||'none';G.rogue.contract=CFG.rogue.contracts[_rc]?_rc:'none';G.roKits=null;G.totalKills=0;G.totalEarned=0;G.totalBombs=0;G.ach=new Set();G.bossKilledSkin=new Set();}
@@ -25259,9 +25259,9 @@ $("btnMute").onclick = () => {
   syncLevelJumpRow();
   syncDifficultyLock();
   $("btnStart").disabled=true; $("btnStart").textContent="加载地表与战机…";
-  Promise.all([...document.querySelectorAll("#gameAssets img,#v5Assets img,#bossAssets img")].map(img=>img.decode())).then(()=>{
-    G.resourcesReady=true;syncPlayModeMenu();$("btnStart").disabled=false;$("btnStart").textContent="出击";if(!hasSave())$("btnStart").style.display="block";maybeAutoStory();render();applyOrientation();
-  }).catch(()=>{$("btnStart").textContent="素材加载失败，请刷新";});
+  const __siteReady=()=>{if(G.resourcesReady)return;G.resourcesReady=true;syncPlayModeMenu();$("btnStart").disabled=false;$("btnStart").textContent="出击";if(!hasSave())$("btnStart").style.display="block";maybeAutoStory();render();applyOrientation();};
+  Promise.all([...document.querySelectorAll("#gameAssets img,#v5Assets img,#bossAssets img")].map(img=>img.decode().catch(()=>{}))).then(__siteReady).catch(__siteReady);
+  setTimeout(__siteReady,600);
   updateHUD();
 })();
 
