@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>苍穹防线：纵向飞行射击</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23060d18'/%3E%3Cpath d='M16 4 L20 20 L16 17 L12 20 Z' fill='%234fc3f7'/%3E%3Ccircle cx='16' cy='12' r='2' fill='%23ffd166'/%3E%3C/svg%3E">
 <style>
@@ -217,7 +217,7 @@
 
 /* r63 故事模式：头像+对话框；固定覆盖在画布上方 */
 .hud-difficulty.story{color:#ffe6a7;border-color:rgba(255,209,102,.75);background:rgba(74,55,16,.55)}
-.story-gate-bar{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:41;max-width:min(720px,92vw);padding:10px 18px;border:1px solid rgba(255,209,102,.8);border-radius:8px;background:rgba(9,18,30,.92);color:#ffe6a7;font:14px/1.6 "Microsoft YaHei",sans-serif;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+.story-gate-bar{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:41;pointer-events:none;max-width:min(720px,92vw);padding:10px 18px;border:1px solid rgba(255,209,102,.8);border-radius:8px;background:rgba(9,18,30,.92);color:#ffe6a7;font:14px/1.6 "Microsoft YaHei",sans-serif;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.45)}
 .story-gate-bar.hide{display:none}
 #ovStory{z-index:44;background:rgba(4,10,20,.86);backdrop-filter:blur(3px)}
 .story-card{width:min(960px,94vw);max-height:92vh;display:flex;flex-direction:column;gap:12px;padding:18px 20px;border:1px solid rgba(110,160,210,.55);border-radius:14px;background:linear-gradient(180deg,rgba(15,30,48,.98),rgba(8,17,29,.98));box-shadow:0 20px 70px rgba(0,0,0,.65);color:#dbe7f6}
@@ -278,6 +278,9 @@
 @media (max-width:900px) and (orientation:portrait){
   body{display:flex;align-items:center;justify-content:center;min-height:100dvh;min-height:100vh}
 }
+@media (orientation:landscape) and (max-height:560px){
+  body{display:flex;align-items:center;justify-content:center;min-height:100dvh;min-height:100vh}
+}
 
 /* 小屏故事对话框：单列堆叠，避免三列把正文挤成竖条 */
 @media (max-width:640px){
@@ -303,6 +306,17 @@
 .portrait-tip{display:none}
 @media (max-width:900px) and (orientation:portrait){
   .portrait-tip{display:block;margin:0 0 8px;padding:6px 10px;border:1px dashed rgba(120,170,220,.55);border-radius:8px;background:rgba(20,40,64,.55);color:#9fc0df;font-size:12px;line-height:1.4;text-align:center}
+}
+
+/* 触屏稳定性：禁页面缩放/平移，避免点击错位与拖动被浏览器抢走 */
+@media (hover:none), (pointer:coarse){
+  html,body{overflow:hidden;overscroll-behavior:none;height:100%;width:100%}
+  .stage,#hud,#missionHint,#aircraftHud,canvas{touch-action:none}
+  .ov,.ov .card,.shopgrid,.rogue-grid{touch-action:pan-y}
+  .rogue-card,.hudbtn,.btn{touch-action:manipulation}
+  .rogue-choice{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border:1px solid #4fc3f7;border-radius:8px;color:#9fdfff;background:rgba(79,195,247,.12);font-weight:700;align-self:flex-start;margin-top:auto}
+  .rogue-card:disabled .rogue-choice{border-color:#3a4a5f;color:#8391a5;background:none}
+  .rogue-card:active:not(:disabled){border-color:#4fc3f7;background:#182742}
 }
 </style>
 </head>
@@ -20607,7 +20621,7 @@ const G = {
   levelHit: true, slow: 0, empFlash: 0, achFlash: null, droneCd: [], transport: null,
   survivalLeft: 0, eliteKills: 0, eliteTarget: 15, progressDirty: false, progressSaveT: 0, achBoom: [], achPanel: false, achQueue: [], achToastT: 0, allowPortrait: false, shopTab: "weapons",
   mythicPityLevel:0, chronoAura:null,
-  story:null, storyDialogOpen:false, storyGate:null, storyGateDone:false, storyClearShown:false, storyClearing:false, storySurviveLeft:0, lastChipReward:null, storyChipGranted:false, storyBombGuaranteed:false, storyShopDone:false, storyShopActive:false, storyShopSpawnPending:false,
+  story:null, storyDialogOpen:false, storyGate:null, storyGateDone:false, gateDrag:null, storyClearShown:false, storyClearing:false, storySurviveLeft:0, lastChipReward:null, storyChipGranted:false, storyBombGuaranteed:false, storyShopDone:false, storyShopActive:false, storyShopSpawnPending:false,
   dmgStat:{bullet:0,slow:0,homing:0,shootable:0,ram:0,aoe:0,beam:0,transport:0},
   dmgBySource:{},
   damageLog: { player:{bullet:{count:0,raw:0,red:0,armor:0,hp:0},slow:{count:0,raw:0,red:0,armor:0,hp:0,slow:0},homing:{count:0,raw:0,red:0,armor:0,hp:0},shootable:{count:0,raw:0,red:0,armor:0,hp:0},ram:{count:0,raw:0,red:0,armor:0,hp:0},aoe:{count:0,raw:0,red:0,armor:0,hp:0},beam:{count:0,raw:0,red:0,armor:0,hp:0}}, transport:{bullet:{count:0,raw:0,hp:0},slow:{count:0,raw:0,hp:0},homing:{count:0,raw:0,hp:0},shootable:{count:0,raw:0,hp:0},ram:{count:0,raw:0,hp:0}}, obstacle:{player:{count:0,raw:0,red:0,armor:0,hp:0},transport:{count:0,raw:0,hp:0}} }
@@ -21749,7 +21763,12 @@ function renderRogueCards(){
  o.cards.forEach((c,i)=>{const b=document.createElement('button');b.className='rogue-card';b.dataset.rogueCard=String(i);b.disabled=o.selected.includes(i);b.setAttribute('aria-label',c.name+' '+rogueCardDescription(c));
   const type=document.createElement('span');type.className='rogue-type';type.textContent={unlock:'装备解锁',aircraft:'战机获取',upgrade:'专项升级',weaponUp:'武器升级',all:'全局强化',link:'武器连携',awaken:'装备觉醒',repair:'维修补给'}[c.type];
   const name=document.createElement('strong');name.textContent=(c.type==='upgrade'&&rogueLevel(c.target)>=29)||(c.type==='all'&&!G.rogue.owned.some(id=>id!=='ult'&&rogueLevel(id)<29))?'满级转化 · 护甲全修复':c.name;const text=document.createElement('span');text.className='rogue-description';text.textContent=rogueCardDescription(c);const choice=document.createElement('span');choice.className='rogue-choice';choice.textContent=b.disabled?'已领取':'选择这张';
-  b.append(type,name,text,choice);b.onclick=()=>pickRogueCard(o.id,i);root.append(b);
+  b.append(type,name,text,choice);
+  let __pd=null;
+  b.addEventListener('pointerdown',e=>{__pd={x:e.clientX,y:e.clientY};});
+  b.addEventListener('pointerup',e=>{const d=__pd;__pd=null;if(!d)return;if(Math.abs(e.clientX-d.x)<12&&Math.abs(e.clientY-d.y)<12){b.dataset.picked='1';pickRogueCard(o.id,i);}});
+  b.onclick=()=>{if(b.dataset.picked){delete b.dataset.picked;return;}pickRogueCard(o.id,i);};
+  root.append(b);
  });$('ovRogue').classList.remove('hide');$('ovShop').classList.add('hide');
 }
 function pickRogueCard(offerId,index){
@@ -25126,10 +25145,10 @@ function toGame(e) {
   const r = cv.getBoundingClientRect();
   return { x: (e.clientX - r.left) / r.width * CFG.W, y: (e.clientY - r.top) / r.height * CFG.H };
 }
-cv.addEventListener("pointerdown", e => { e.preventDefault(); ensureAudio(); if(G.storyDialogOpen){advanceStoryDialogue();return;} if(G.storyGate)return; cv.setPointerCapture(e.pointerId); G.pointer = toGame(e); });
-cv.addEventListener("pointermove", e => { if (G.pointer) G.pointer = toGame(e); });
-window.addEventListener("pointerup", () => { G.pointer = null; });
-window.addEventListener("pointercancel", () => { G.pointer = null; });
+cv.addEventListener("pointerdown", e => { e.preventDefault(); ensureAudio(); if(G.storyDialogOpen){advanceStoryDialogue();return;} if(G.storyGate){ if(G.storyGate==="move"){ try{cv.setPointerCapture(e.pointerId);}catch(_){} G.pointer=toGame(e); G.gateDrag={x:e.clientX,y:e.clientY}; } return; } cv.setPointerCapture(e.pointerId); G.pointer = toGame(e); });
+cv.addEventListener("pointermove", e => { if (G.pointer) G.pointer = toGame(e); if(G.storyGate==="move"&&G.gateDrag&&Math.hypot(e.clientX-G.gateDrag.x,e.clientY-G.gateDrag.y)>10){ G.gateDrag=null; finishStoryGate(); } });
+window.addEventListener("pointerup", () => { G.pointer = null; G.gateDrag=null; });
+window.addEventListener("pointercancel", () => { G.pointer = null; G.gateDrag=null; });
 window.addEventListener("keydown", e => {
   ensureAudio();
   if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(e.code)) e.preventDefault();
@@ -25154,6 +25173,7 @@ function pauseOnBlur() {
   G.keys = {}; G.pointer = null;
   if (G.mode === "play" && !G.paused) togglePause();
 }
+["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,e=>{try{e.preventDefault();}catch(_){}},{passive:false}));
 window.addEventListener("blur", pauseOnBlur);
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseOnBlur(); });
 
@@ -25239,7 +25259,8 @@ function fitStage(){
  const limit=Math.min(960,Math.floor(innerWidth/scale));stage.style.width=limit+'px';
  for(let i=0;i<6;i++){
   const inFlowHeight=el=>el&&getComputedStyle(el).position!=="absolute"?el.offsetHeight:0;
-  const reserved=inFlowHeight($('hud'))+inFlowHeight($('missionHint'))+inFlowHeight($('aircraftHud'))+12;
+  const safePad=(innerWidth<=900||innerHeight<=560)?16:0;
+  const reserved=inFlowHeight($('hud'))+inFlowHeight($('missionHint'))+inFlowHeight($('aircraftHud'))+12+safePad;
   const width=Math.min(limit,Math.max(120,innerHeight/scale-reserved)*1.6);
   if(Math.abs(stage.getBoundingClientRect().width/scale-width)<1)break;
   stage.style.width=width+'px';
@@ -25282,7 +25303,7 @@ renderAchPanel();
 $("btnStart").onclick = () => { ensureAudio(); clearSave(); startGame(); };
 $("btnContinue").onclick = () => { ensureAudio(); continueGame(); };
 $("btnMenuRestart").onclick = () => {if($("playModeSelect").value==="story"){if(confirm("重新开始故事会从第1章开始，芯片仓与现有经典存档保留。确定吗？")){ensureAudio();clearSave();startStory(1,true);}return;} if($("playModeSelect").value==="rogue"){ensureAudio();startGame();return;} if(confirm("重新开始会清空关卡、装备和专武等级，机型失效；金币、成就和最高纪录保留。确定吗？")){ensureAudio();clearSave();startGame();} };
-$("btnUlt").onclick = () => { if (G.mode === "play" && !G.paused && !(isStory()&&(G.storyDialogOpen||G.storyGate))) releaseUlt(); };
+$("btnUlt").onclick = () => { if (G.mode !== "play" || G.paused) return; if(isStory()&&G.storyGate==="ult"){ if(G.ult>=CFG.ult.maxEnergy&&G.ultCd<=0){ releaseUlt(); finishStoryGate(); } return; } if(isStory()&&(G.storyDialogOpen||G.storyGate)) return; releaseUlt(); };
 $("btnRetry").onclick = () => { ensureAudio(); retryCurrentLevel(); };
 $("btnStoryNext").onclick = () => { ensureAudio(); advanceStoryDialogue(); };
 $("btnOverMenu").onclick=returnToMainMenu;$("btnPauseMenu").onclick=returnToMainMenu;$("playModeSelect").onchange=syncPlayModeMenu;
