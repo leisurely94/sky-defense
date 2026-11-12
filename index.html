@@ -318,9 +318,19 @@
   .rogue-card:disabled .rogue-choice{border-color:#3a4a5f;color:#8391a5;background:none}
   .rogue-card:active:not(:disabled){border-color:#4fc3f7;background:#182742}
 }
+
+/* 移动端 EMP 充能圆钮：右下角，落在画面黑边内，不遮挡战斗区 */
+.emp-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;padding:0;border:2px solid rgba(79,195,247,.45);color:#eaf6ff;font:700 12px/1.2 inherit;display:grid;place-items:center;text-align:center;z-index:26;box-shadow:0 6px 22px rgba(0,0,0,.55);-webkit-tap-highlight-color:transparent;touch-action:manipulation;overflow:hidden;background-image:radial-gradient(circle at 50% 50%, #0d1a2b 0 27px, transparent 28px), conic-gradient(#4fc3f7 var(--ult-deg,0deg), rgba(24,42,66,1) var(--ult-deg,0deg));transition:box-shadow .2s,border-color .2s,transform .12s}
+.emp-fab span{position:relative;z-index:2;letter-spacing:.5px;white-space:pre-line}
+.emp-fab[data-ready="1"]{border-color:#8fe3ff;box-shadow:0 0 0 2px rgba(79,195,247,.35),0 0 28px rgba(79,195,247,.65);animation:empPulse 1.5s ease-in-out infinite}
+.emp-fab:active{transform:scale(.94)}
+.emp-fab.hide{display:none}
+.emp-fab:disabled{opacity:.92;cursor:default}
+@keyframes empPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 </style>
 </head>
 <body>
+<button id="empFab" class="emp-fab hide" aria-label="EMP 风暴"><span id="empFabText">EMP</span></button>
 <div class="stage">
   <canvas id="cv" width="960" height="600"></canvas>
   <div id="hud" aria-label="作战状态">
@@ -22124,7 +22134,7 @@ function beginStoryGate(gate){
   if(gate==='ult'){G.ult=CFG.ult.maxEnergy;G.ultCd=0;}
   $('ovStory').classList.add('hide');
   const bar=$('storyGateBar');
-  if(bar){bar.classList.remove('hide');bar.textContent=gate==='move'?(__touchUI?'教程 · 拖动屏幕移动战机，完成移动后战斗继续':'教程 · 按 W/A/S/D 或方向键移动，完成移动后战斗继续'):(__touchUI?'教程 · 点 EMP 按钮释放风暴，清弹后战斗继续':'教程 · 按 E 释放 EMP 风暴，清弹后战斗继续');}
+  if(bar){bar.classList.remove('hide');bar.textContent=gate==='move'?(__touchUI?'教程 · 拖动屏幕移动战机，完成移动后战斗继续':'教程 · 按 W/A/S/D 或方向键移动，完成移动后战斗继续'):(__touchUI?'教程 · 点右下角 EMP 圆钮释放风暴，清弹后战斗继续':'教程 · 按 E 释放 EMP 风暴，清弹后战斗继续');}
   updateHUD();
 }
 function finishStoryGate(){
@@ -22768,7 +22778,7 @@ function resetObstacles() {
 function repairCost() { return CFG.repairBase + CFG.repairPerLvl * G.level; }
 function needsRepair() { return G.hp < playerMaxHp() || G.armor < armorCap() - 0.001; }
 function missionText() {
-  if(isStory()){if(G.storyGate)return __touchUI?"教程：拖动屏幕移动或点 EMP，完成后战斗继续":"教程：按 "+(G.storyGate==="move"?"W/A/S/D 或方向键移动":"E 释放 EMP")+"，完成后战斗继续";if(G.bossClear)return "故事关卡完成";if(G.storySurviveLeft>0)return "第 "+storyLevel()+" 章 · 守住信标 "+Math.ceil(Math.max(0,G.storySurviveLeft))+" 秒";return "第 "+storyLevel()+" 章 · "+storyDef().title+" · 击败敌人推进波次";}
+  if(isStory()){if(G.storyGate)return __touchUI?"教程：拖动屏幕移动，点右下角 EMP 圆钮，完成后战斗继续":"教程：按 "+(G.storyGate==="move"?"W/A/S/D 或方向键移动":"E 释放 EMP")+"，完成后战斗继续";if(G.bossClear)return "故事关卡完成";if(G.storySurviveLeft>0)return "第 "+storyLevel()+" 章 · 守住信标 "+Math.ceil(Math.max(0,G.storySurviveLeft))+" 秒";return "第 "+storyLevel()+" 章 · "+storyDef().title+" · 击败敌人推进波次";}
   if(G.bossClear)return "任务完成：基地整理装备后出击下一关";
   return "自动射击；拖动或WASD/方向键移动，亮色小圆环是受击区域。击败首领通关";
 }
@@ -23727,6 +23737,21 @@ function continueGame() {
 }
 /* ===== 大招与成就 ===== */
 function addEnergy(n) {if(isRogue()&&!rogueOwned("ult"))return; G.ult = clamp(G.ult + n, 0, CFG.ult.maxEnergy); }
+function syncEmpFab(cd, ready){
+  const fab=$("empFab"); if(!fab) return;
+  const show=(__touchUI||innerWidth<=900)&&G.mode==="play";
+  fab.classList.toggle("hide", !show);
+  const hudBtn=$("btnUlt");
+  if(hudBtn) hudBtn.style.display = (__touchUI||innerWidth<=900) ? "none" : "";
+  if(!show) return;
+  const pct=clamp(G.ult/CFG.ult.maxEnergy*100,0,100);
+  fab.style.setProperty("--ult-deg",(pct*3.6).toFixed(1)+"deg");
+  fab.disabled=!ready;
+  fab.dataset.ready=ready?"1":"0";
+  const sp=fab.querySelector("span");
+  if(sp) sp.textContent = cd>0 ? ("冷却 "+Math.ceil(cd)+"s") : (G.ult>=CFG.ult.maxEnergy ? "释放" : "EMP "+Math.floor(pct)+"%");
+  fab.title = cd>0 ? ("EMP风暴冷却中：剩余 "+cd.toFixed(1)+" 秒") : (G.ult>=CFG.ult.maxEnergy ? "释放EMP：清弹并获得2秒无敌" : "EMP未充满：击杀敌人充能，受击损失25点");
+}
 function releaseUlt() {
   if(isRogue()&&!rogueOwned("ult"))return;
   if (G.mode !== "play" || G.paused || G.bossClear || G.ult < CFG.ult.maxEnergy || G.ultCd > 0) return;
@@ -25119,7 +25144,7 @@ function updateHUD() {
   const enemy=enemyVitals(),progress=stageProgress();
   $("hudScore").previousElementSibling.textContent=isStory()?"章节":isRogue()?"已领卡":"零件";
   setText("hudScore",isStory()?("第"+storyLevel()+"章"):isRogue()?String(G.rogue?.chosen||0):G.score.toLocaleString());setText("hudHpValue",pair(G.hp,playerMaxHp()));setText("hudShieldValue",pair(G.armor,armorCap()));
-  setText("hudUlt",Math.floor(G.ult)+"/"+CFG.ult.maxEnergy);$("ultBar").style.width=clamp(G.ult/CFG.ult.maxEnergy*100,0,100)+"%";if($("btnUlt")){const cd=G.ultCd>0?G.ultCd:0,ready=G.ult>=CFG.ult.maxEnergy&&cd<=0&&G.mode==="play"&&!G.paused&&!G.bossClear;$("btnUlt").disabled=!ready;$("btnUlt").textContent=cd>0?("冷却 "+cd.toFixed(1)+"s"):(G.ult>=100?"释放EMP":"EMP");$("btnUlt").title=cd>0?("EMP风暴冷却中：剩余 "+cd.toFixed(1)+" 秒（释放后冷却 6 秒）"):(G.ult>=100?"释放EMP：清弹并获得2秒无敌（E）":"EMP未充满：击杀充能，受击损失25点");}
+  setText("hudUlt",Math.floor(G.ult)+"/"+CFG.ult.maxEnergy);$("ultBar").style.width=clamp(G.ult/CFG.ult.maxEnergy*100,0,100)+"%";if($("btnUlt")){const cd=G.ultCd>0?G.ultCd:0,gateLock=isStory()&&(G.storyDialogOpen||(G.storyGate&&G.storyGate!=="ult")),ready=G.ult>=CFG.ult.maxEnergy&&cd<=0&&G.mode==="play"&&!G.paused&&!G.bossClear&&!gateLock;$("btnUlt").disabled=!ready;$("btnUlt").textContent=cd>0?("冷却 "+cd.toFixed(1)+"s"):(G.ult>=100?"释放EMP":"EMP");$("btnUlt").title=cd>0?("EMP风暴冷却中：剩余 "+cd.toFixed(1)+" 秒（释放后冷却 6 秒）"):(G.ult>=100?"释放EMP：清弹并获得2秒无敌（E）":"EMP未充满：击杀充能，受击损失25点");syncEmpFab(cd,ready);}
   setText("enemyHealthLabel",enemy.transport?"运输机生命":enemy.boss?((G.boss&&G.boss.mini)?"副首领血量":"首领血量"):"敌群血量");setText("enemyShieldLabel",enemy.transport?"护送航程":enemy.boss?((G.boss&&G.boss.mini)?"副首领护盾":"首领护盾"):"敌群护盾");
   setText("enemyHpValue",pair(enemy.hp,enemy.maxhp));setText("enemyShieldValue",enemy.transport?Math.floor(enemy.shield)+"%":pair(enemy.shield,enemy.maxShield));
   $("enemyHpBar").style.background=enemy.transport?(enemy.hp/Math.max(1,enemy.maxhp)<.3?"#ff5a5f":"#4fc3f7"):"#ff5a5f"; showLevelBrief();
@@ -25303,7 +25328,10 @@ renderAchPanel();
 $("btnStart").onclick = () => { ensureAudio(); clearSave(); startGame(); };
 $("btnContinue").onclick = () => { ensureAudio(); continueGame(); };
 $("btnMenuRestart").onclick = () => {if($("playModeSelect").value==="story"){if(confirm("重新开始故事会从第1章开始，芯片仓与现有经典存档保留。确定吗？")){ensureAudio();clearSave();startStory(1,true);}return;} if($("playModeSelect").value==="rogue"){ensureAudio();startGame();return;} if(confirm("重新开始会清空关卡、装备和专武等级，机型失效；金币、成就和最高纪录保留。确定吗？")){ensureAudio();clearSave();startGame();} };
-$("btnUlt").onclick = () => { if (G.mode !== "play" || G.paused) return; if(isStory()&&G.storyGate==="ult"){ if(G.ult>=CFG.ult.maxEnergy&&G.ultCd<=0){ releaseUlt(); finishStoryGate(); } return; } if(isStory()&&(G.storyDialogOpen||G.storyGate)) return; releaseUlt(); };
+const __tryReleaseUlt = () => { if (G.mode !== "play" || G.paused) return; if(isStory()&&G.storyGate==="ult"){ if(G.ult>=CFG.ult.maxEnergy&&G.ultCd<=0){ releaseUlt(); finishStoryGate(); } return; } if(isStory()&&(G.storyDialogOpen||G.storyGate)) return; releaseUlt(); };
+$("btnUlt").onclick = __tryReleaseUlt;
+if($("empFab")) $("empFab").onclick = __tryReleaseUlt;
+document.addEventListener("click", e => { const t=e.target && e.target.closest && e.target.closest("#empFab"); if(t) __tryReleaseUlt(); });
 $("btnRetry").onclick = () => { ensureAudio(); retryCurrentLevel(); };
 $("btnStoryNext").onclick = () => { ensureAudio(); advanceStoryDialogue(); };
 $("btnOverMenu").onclick=returnToMainMenu;$("btnPauseMenu").onclick=returnToMainMenu;$("playModeSelect").onchange=syncPlayModeMenu;
